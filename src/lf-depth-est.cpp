@@ -33,6 +33,12 @@
 
 #define MONO_COLOUR 0
 
+#include <boost/log/core.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/expressions.hpp>
+
+using namespace std;
+
 /**
  * GPU disparity calculation
  * @param lf
@@ -40,15 +46,15 @@
  * @param disp_min
  * @param disp_max
  */
-void BuildLFDisparityMap(const std::vector<std::vector<cv::Mat>> &lf, cv::Mat &disparity_map,
+void BuildLFDisparityMap(const vector<vector<cv::Mat>> &lf, cv::Mat &disparity_map,
                          float disp_min, float disp_max) {
 
   setCudaParamsForImage(lf[0][0], cuda_threads_per_block);
   cudaProfilerStart();
 
   // Maintain cuda stream vectors in both OpenCV and native types
-  std::vector<cv::cuda::Stream> streams(NUM_CUDA_STREAMS);
-  std::vector<cudaStream_t> c_streams;
+  vector<cv::cuda::Stream> streams(NUM_CUDA_STREAMS);
+  vector<cudaStream_t> c_streams;
   for (auto s : streams) {
     c_streams.push_back(cv::cuda::StreamAccessor::getStream(s));
   }
@@ -57,9 +63,9 @@ void BuildLFDisparityMap(const std::vector<std::vector<cv::Mat>> &lf, cv::Mat &d
   cv::cuda::setDevice(0);
 
   // Transfer light field to the GPU
-  std::vector<std::vector<cv::cuda::GpuMat>> lf_gpu(lf.size());
+  vector<vector<cv::cuda::GpuMat>> lf_gpu(lf.size());
   for (int i = 0; i < lf.size(); ++i) {
-    lf_gpu[i] = std::vector<cv::cuda::GpuMat>(lf[0].size());
+    lf_gpu[i] = vector<cv::cuda::GpuMat>(lf[0].size());
   }
   for (int i = 0; i < lf.size(); ++i) {
     for (int j = 0; j < lf[0].size(); ++j) {
@@ -86,9 +92,9 @@ void BuildLFDisparityMap(const std::vector<std::vector<cv::Mat>> &lf, cv::Mat &d
   streams[0].waitForCompletion();
   cv::cuda::GpuMat reference_image = lf_gpu[u_size / 2][v_size / 2];
 
-  std::vector<cv::cuda::GpuMat> x_maps_gpu, y_maps_gpu, defoc_parts, dx, dy,
+  vector<cv::cuda::GpuMat> x_maps_gpu, y_maps_gpu, defoc_parts, dx, dy,
       defoc_gradients, tad_c_images, tad_cg_means, tad_cg_costs;
-  std::vector<std::vector<cv::cuda::GpuMat>> split_channel_sets;
+  vector<vector<cv::cuda::GpuMat>> split_channel_sets;
 
   // preallocate intermediate variables
   x_maps_gpu.resize(NUM_CUDA_STREAMS, cv::cuda::GpuMat(lf_gpu[0][0].rows,
@@ -124,24 +130,19 @@ void BuildLFDisparityMap(const std::vector<std::vector<cv::Mat>> &lf, cv::Mat &d
 #if PERFORM_GUIDED_FILTER_ITER
   GuidedFilter iter_filter(reference_image, GUIDED_FILTER_NEIGHBOURHOOD, GUIDED_FILTER_SMOOTHING);
 #endif
-  std::cout << "Filter creation, reference grad and lf to GPU transfer: " << CPU_TIME() - start_time << " seconds"
-            << std::endl;
+  BOOST_LOG_TRIVIAL(info) << "Filter creation, reference grad and lf to GPU transfer: " << CPU_TIME() - start_time << " seconds";
 
   double shifting_tadcg_time = 0;
   double mean_cost_time = 0;
   double argmin_time = 0;
-  std::cout << "'=' printed every 10 shifts.  " << DEPTH_RESOLUTION << " total shifts" << std::endl;
+  BOOST_LOG_TRIVIAL(info) << "'=' printed every 10 shifts.  " << DEPTH_RESOLUTION << " total shifts";
 
   // Compute responses for each alpha value and produce disparity map for both
   size_t depth_index = 0;
-  std::vector<float> shifts;
+  vector<float> shifts;
   for (float shift = disp_min; shift <= disp_max; shift += shift_step) {
     shifts.push_back(shift);
     int stream_idx = (int) (depth_index % NUM_CUDA_STREAMS);
-    if (depth_index % 10 == 0) {
-      std::cout << "=";
-      std::cout.flush();
-    }
 
     tad_cg_means[stream_idx].setTo(cv::Scalar(0.0), streams[stream_idx]);
 
@@ -234,10 +235,9 @@ void BuildLFDisparityMap(const std::vector<std::vector<cv::Mat>> &lf, cv::Mat &d
   tad_cg_disp.download(disparity_map);
 
   cudaProfilerStop();
-  std::cout << std::endl;
-  std::cout << "Shifting and tad_cg calc: " << shifting_tadcg_time << " seconds" << std::endl;
-  std::cout << "Mean and cost calc: " << mean_cost_time << " seconds" << std::endl;
-  std::cout << "Argmin calc: " << argmin_time << " seconds" << std::endl;
+  BOOST_LOG_TRIVIAL(info) << "Shifting and tad_cg calc: " << shifting_tadcg_time << " seconds";
+  BOOST_LOG_TRIVIAL(info) << "Mean and cost calc: " << mean_cost_time << " seconds";
+  BOOST_LOG_TRIVIAL(info) << "Argmin calc: " << argmin_time << " seconds";
 
 }
 
