@@ -43,38 +43,6 @@ namespace GLFCV {
       return ret;
     }
 
-    PyObject* getLF(std::string repo) {
-      using namespace std;
-      boost::filesystem::path path(repo);
-      vector<vector<cv::Mat> > lf;
-      cv::Mat disparityGT;
-      struct image_meta metadata;
-      metadata.isValid = false;
-      decoder::ReadBenchmarkFolder(path, lf, disparityGT, &metadata);
-      auto ret = pbcvt::fromMatToNDArray(disparityGT);
-      return ret;
-    }
-
-//This example uses Mat directly, but we won't need to worry about the conversion
-/**
- * Example function. Basic inner matrix product using implicit matrix conversion.
- * @param leftMat left-hand matrix operand
- * @param rightMat right-hand matrix operand
- * @return an NdArray representing the dot-product of the left and right operands
- */
-    cv::Mat dot2(cv::Mat leftMat, cv::Mat rightMat) {
-        auto c1 = leftMat.cols, r2 = rightMat.rows;
-        if (c1 != r2) {
-            PyErr_SetString(PyExc_TypeError,
-                            "Incompatible sizes for matrix multiplication.");
-            throw_error_already_set();
-        }
-        cv::Mat result = leftMat * rightMat;
-
-        return result;
-    }
-
-
 #if (PY_VERSION_HEX >= 0x03000000)
 
     static void *init_ar() {
@@ -98,7 +66,6 @@ namespace GLFCV {
 
         //expose module-level functions
         def("disparity_map", disparity_map);
-        def("getLF", getLF);
 
     }
 

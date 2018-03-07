@@ -33,10 +33,6 @@
 
 #define MONO_COLOUR 0
 
-#include <boost/log/core.hpp>
-#include <boost/log/trivial.hpp>
-#include <boost/log/expressions.hpp>
-
 using namespace std;
 
 /**
@@ -130,12 +126,12 @@ void BuildLFDisparityMap(const vector<vector<cv::Mat>> &lf, cv::Mat &disparity_m
 #if PERFORM_GUIDED_FILTER_ITER
   GuidedFilter iter_filter(reference_image, GUIDED_FILTER_NEIGHBOURHOOD, GUIDED_FILTER_SMOOTHING);
 #endif
-  BOOST_LOG_TRIVIAL(info) << "Filter creation, reference grad and lf to GPU transfer: " << CPU_TIME() - start_time << " seconds";
+  cout << "Filter creation, reference grad and lf to GPU transfer: " << CPU_TIME() - start_time << " seconds" << endl;
 
   double shifting_tadcg_time = 0;
   double mean_cost_time = 0;
   double argmin_time = 0;
-  BOOST_LOG_TRIVIAL(info) << "'=' printed every 10 shifts.  " << DEPTH_RESOLUTION << " total shifts";
+  cout << "'=' printed every 10 shifts.  " << DEPTH_RESOLUTION << " total shifts" << endl;
 
   // Compute responses for each alpha value and produce disparity map for both
   size_t depth_index = 0;
@@ -235,9 +231,9 @@ void BuildLFDisparityMap(const vector<vector<cv::Mat>> &lf, cv::Mat &disparity_m
   tad_cg_disp.download(disparity_map);
 
   cudaProfilerStop();
-  BOOST_LOG_TRIVIAL(info) << "Shifting and tad_cg calc: " << shifting_tadcg_time << " seconds";
-  BOOST_LOG_TRIVIAL(info) << "Mean and cost calc: " << mean_cost_time << " seconds";
-  BOOST_LOG_TRIVIAL(info) << "Argmin calc: " << argmin_time << " seconds";
+  cout << "Shifting and tad_cg calc: " << shifting_tadcg_time << " seconds" << endl;
+  cout << "Mean and cost calc: " << mean_cost_time << " seconds" << endl;
+  cout << "Argmin calc: " << argmin_time << " seconds" << endl;
 
 }
 

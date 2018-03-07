@@ -64,7 +64,7 @@ find_package(CUDA 8.0 REQUIRED)
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost 1.58 COMPONENTS python3 filesystem regex  REQUIRED)
+find_package(Boost 1.58 COMPONENTS python3 filesystem regex REQUIRED)
 
 # Add files
 file(GLOB SOURCES src/*.cpp src/cuda-kernels/*.cu)
